@@ -450,13 +450,10 @@ export default function SignupPage() {
                   {/* Rules checklist */}
                   <div className="flex flex-col gap-2 mt-3">
                     {ruleResults.map(rule => (
-                      <div key={rule.id} className="flex items-center gap-3">
-                        <span
-                          className="flex-shrink-0 rounded-full inline-flex items-center justify-center"
+                      <div key={rule.id} className="flex flex-row items-center gap-3">
+                        <div
+                          className="flex-none w-4 h-4 rounded-full flex items-center justify-center"
                           style={{
-                            width: '16px',
-                            height: '16px',
-                            minWidth: '16px',
                             background: rule.met ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.04)',
                             border: `1px solid ${rule.met ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}`,
                             transition: 'all 0.2s ease',
@@ -467,18 +464,17 @@ export default function SignupPage() {
                               <path d="M1.5 4L3 5.5L6.5 2" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           )}
-                        </span>
-                        <span
-                          className="text-xs"
+                        </div>
+                        <p
+                          className="text-xs m-0"
                           style={{
                             color: rule.met ? '#22c55e' : '#6b7280',
                             fontWeight: rule.met ? 400 : 300,
                             transition: 'color 0.2s ease',
-                            lineHeight: '1.4',
                           }}
                         >
                           {rule.label}
-                        </span>
+                        </p>
                       </div>
                     ))}
                   </div>
