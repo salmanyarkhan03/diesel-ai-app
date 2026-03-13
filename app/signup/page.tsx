@@ -43,9 +43,9 @@ function FuelGauge({ strength }: { strength: number }) {
     const outer = r + 7
     return {
       x1: cx + inner * Math.cos(angleRad),
-      y1: cy + inner * Math.sin(angleRad),
+      y1: cy - inner * Math.sin(angleRad),
       x2: cx + outer * Math.cos(angleRad),
-      y2: cy + outer * Math.sin(angleRad),
+      y2: cy - outer * Math.sin(angleRad),
     }
   })
 
@@ -54,7 +54,7 @@ function FuelGauge({ strength }: { strength: number }) {
       width="200"
       height="116"
       viewBox="0 0 200 116"
-      style={{ overflow: 'visible' }}
+      style={{ overflow: 'hidden' }}
     >
       <defs>
         <filter id="gaugeGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -368,7 +368,7 @@ export default function SignupPage() {
                 required
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
-                placeholder="Alex Rodriguez"
+                placeholder="John Smith"
                 className="w-full rounded-lg px-4 py-3 text-sm outline-none transition-all duration-200"
                 style={{
                   background: 'rgba(255,255,255,0.05)',
