@@ -54,7 +54,7 @@ export default function LoginPage() {
 
       <div className="relative w-full max-w-sm">
         {/* Logo */}
-        <div className="flex justify-center mb-10">
+        <div className="w-full flex justify-center items-center mb-10">
           <Logo size="lg" />
         </div>
 
