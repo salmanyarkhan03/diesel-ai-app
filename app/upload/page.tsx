@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import NavBar from '@/components/NavBar'
 import Sidebar from '@/components/Sidebar'
@@ -82,8 +82,6 @@ export default function UploadPage() {
   const [processingStep, setProcessingStep] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounter = useRef(0)
-
-  const ACCEPTED = ['.csv', '.xlsx']
 
   const isValidFile = (f: File) =>
     f.name.endsWith('.csv') || f.name.endsWith('.xlsx') ||

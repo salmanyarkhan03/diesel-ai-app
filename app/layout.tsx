@@ -1,6 +1,21 @@
 import type { Metadata } from 'next'
+import { Barlow, Barlow_Condensed } from 'next/font/google'
 import './globals.css'
 import { LocationProvider } from '@/lib/location-context'
+
+const barlow = Barlow({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-barlow',
+  display: 'swap',
+})
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ['latin'],
+  weight: ['900'],
+  variable: '--font-barlow-condensed',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Diesel AI — Fuel Intelligence Platform',
@@ -16,15 +31,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@900&family=Barlow:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`}>
       <body style={{ backgroundColor: '#080910' }}>
         <LocationProvider>{children}</LocationProvider>
       </body>
