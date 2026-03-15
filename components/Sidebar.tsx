@@ -18,6 +18,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/upload',
+    label: 'Upload Report',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 10V3M8 3L5 6M8 3L11 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M2 11 L2 13 Q2 14 3 14 L13 14 Q14 14 14 13 L14 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
     href: '/locations',
     label: 'Locations',
     icon: (
