@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import Sidebar from '@/components/Sidebar'
 import { InsightPriority } from '@/types'
@@ -63,13 +63,355 @@ const MOCK_INSIGHTS: MockInsight[] = [
   },
 ]
 
+const MOCK_LOCATION = {
+  name: 'Main Street #1',
+  address: '1234 Main Street, Springfield, IL 62701',
+}
+
 const PRIORITY_STYLES: Record<InsightPriority, { bg: string; text: string; border: string }> = {
   HIGH: { bg: 'rgba(239,68,68,0.1)', text: '#f87171', border: 'rgba(239,68,68,0.25)' },
   MEDIUM: { bg: 'rgba(251,191,36,0.1)', text: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
   LOW: { bg: 'rgba(34,197,94,0.1)', text: '#22c55e', border: 'rgba(34,197,94,0.25)' },
 }
 
-function InsightCard({ insight }: { insight: MockInsight }) {
+// ─── Shared modal styles ──────────────────────────────────────────────────────
+
+const OVERLAY_STYLE: React.CSSProperties = {
+  position: 'fixed', inset: 0, zIndex: 50,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  padding: '0 16px',
+  background: 'rgba(0,0,0,0.75)',
+  backdropFilter: 'blur(6px)',
+}
+
+const MODAL_STYLE: React.CSSProperties = {
+  width: '100%', maxWidth: 480,
+  borderRadius: 20,
+  padding: '28px 28px 24px',
+  background: '#0d0f14',
+  border: '1px solid rgba(255,255,255,0.1)',
+  boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+  position: 'relative',
+}
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: '100%',
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 10,
+  padding: '10px 14px',
+  color: '#f9fafb',
+  fontFamily: "'Barlow', sans-serif",
+  fontWeight: 300,
+  fontSize: 14,
+  outline: 'none',
+}
+
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block',
+  color: '#6b7280',
+  fontFamily: "'Barlow', sans-serif",
+  fontWeight: 400,
+  fontSize: 12,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  marginBottom: 6,
+}
+
+const BTN_GREEN: React.CSSProperties = {
+  background: 'rgba(34,197,94,0.15)',
+  border: '1px solid rgba(34,197,94,0.4)',
+  color: '#22c55e',
+  borderRadius: 10,
+  padding: '10px 18px',
+  fontFamily: "'Barlow', sans-serif",
+  fontWeight: 500,
+  fontSize: 13,
+  cursor: 'pointer',
+  transition: 'all 0.15s',
+}
+
+const BTN_GHOST: React.CSSProperties = {
+  background: 'transparent',
+  border: '1px solid rgba(255,255,255,0.1)',
+  color: '#6b7280',
+  borderRadius: 10,
+  padding: '10px 18px',
+  fontFamily: "'Barlow', sans-serif",
+  fontWeight: 400,
+  fontSize: 13,
+  cursor: 'pointer',
+  transition: 'all 0.15s',
+}
+
+// ─── Delivery Modal ───────────────────────────────────────────────────────────
+
+function DeliveryModal({ onClose, onScheduled }: { onClose: () => void; onScheduled: () => void }) {
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+
+  useEffect(() => {
+    const saved = localStorage.getItem('jobber_contact')
+    if (saved) {
+      const { phone: p, email: e } = JSON.parse(saved)
+      setPhone(p || '')
+      setEmail(e || '')
+    }
+  }, [])
+
+  const saveContact = () => {
+    localStorage.setItem('jobber_contact', JSON.stringify({ phone, email }))
+  }
+
+  const handleScheduled = () => {
+    saveContact()
+    onScheduled()
+    onClose()
+  }
+
+  const emailSubject = encodeURIComponent(`Fuel Delivery Request - ${MOCK_LOCATION.name}`)
+  const emailBody = encodeURIComponent(
+    `Hi, I need to schedule a fuel delivery. Tank levels are currently low. Please contact me to arrange delivery at ${MOCK_LOCATION.address}.`
+  )
+
+  return (
+    <div style={OVERLAY_STYLE} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={MODAL_STYLE}>
+        {/* Close */}
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}
+        >
+          ×
+        </button>
+
+        {/* Title */}
+        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 22, letterSpacing: '0.04em', color: '#f9fafb', marginBottom: 6 }}>
+          SCHEDULE FUEL DELIVERY
+        </h2>
+        <p style={{ color: '#6b7280', fontWeight: 300, fontSize: 13, lineHeight: 1.6, marginBottom: 24 }}>
+          Call or email your jobber to schedule delivery. We&apos;ll track your request.
+        </p>
+
+        {/* Fields */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+          <div>
+            <label style={LABEL_STYLE}>Jobber Phone</label>
+            <input
+              type="tel"
+              placeholder="+1 (555) 000-0000"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              style={INPUT_STYLE}
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(34,197,94,0.5)')}
+              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; saveContact() }}
+            />
+          </div>
+          <div>
+            <label style={LABEL_STYLE}>Jobber Email</label>
+            <input
+              type="email"
+              placeholder="jobber@supplier.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={INPUT_STYLE}
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(34,197,94,0.5)')}
+              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; saveContact() }}
+            />
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <a
+              href={phone ? `tel:${phone.replace(/\s/g, '')}` : undefined}
+              style={{
+                ...BTN_GREEN,
+                flex: 1,
+                textAlign: 'center',
+                textDecoration: 'none',
+                display: 'block',
+                opacity: phone ? 1 : 0.4,
+                pointerEvents: phone ? 'auto' : 'none',
+              }}
+            >
+              Call Jobber
+            </a>
+            <a
+              href={email ? `mailto:${email}?subject=${emailSubject}&body=${emailBody}` : undefined}
+              style={{
+                ...BTN_GREEN,
+                flex: 1,
+                textAlign: 'center',
+                textDecoration: 'none',
+                display: 'block',
+                opacity: email ? 1 : 0.4,
+                pointerEvents: email ? 'auto' : 'none',
+              }}
+            >
+              Email Jobber
+            </a>
+          </div>
+          <button style={{ ...BTN_GREEN, width: '100%', background: 'rgba(34,197,94,0.22)', borderColor: 'rgba(34,197,94,0.6)' }} onClick={handleScheduled}>
+            Mark as Scheduled
+          </button>
+          <button style={{ ...BTN_GHOST, width: '100%' }} onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Price Modal ──────────────────────────────────────────────────────────────
+
+const DEFAULT_PRICES = { regular: '3.49', plus: '3.79', super: '3.99', diesel: '3.89' }
+
+function PriceModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [prices, setPrices] = useState(DEFAULT_PRICES)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('fuel_prices')
+    if (saved) setPrices(JSON.parse(saved))
+  }, [])
+
+  const handleSave = () => {
+    localStorage.setItem('fuel_prices', JSON.stringify(prices))
+    onSaved()
+    onClose()
+  }
+
+  const priceFields: { key: keyof typeof DEFAULT_PRICES; label: string }[] = [
+    { key: 'regular', label: 'Regular' },
+    { key: 'plus', label: 'Plus' },
+    { key: 'super', label: 'Super' },
+    { key: 'diesel', label: 'Diesel' },
+  ]
+
+  return (
+    <div style={OVERLAY_STYLE} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={MODAL_STYLE}>
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}
+        >
+          ×
+        </button>
+
+        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 22, letterSpacing: '0.04em', color: '#f9fafb', marginBottom: 6 }}>
+          UPDATE FUEL PRICE
+        </h2>
+        <p style={{ color: '#6b7280', fontWeight: 300, fontSize: 13, lineHeight: 1.6, marginBottom: 24 }}>
+          Current prices per gallon
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+          {priceFields.map(({ key, label }) => (
+            <div key={key}>
+              <label style={LABEL_STYLE}>{label}</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontFamily: "'Barlow', sans-serif", fontSize: 14 }}>$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={prices[key]}
+                  onChange={e => setPrices(prev => ({ ...prev, [key]: e.target.value }))}
+                  style={{ ...INPUT_STYLE, paddingLeft: 26 }}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(34,197,94,0.5)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Note */}
+        <div style={{
+          background: 'rgba(251,191,36,0.07)',
+          border: '1px solid rgba(251,191,36,0.2)',
+          borderRadius: 10,
+          padding: '12px 14px',
+          marginBottom: 20,
+        }}>
+          <p style={{ color: '#fbbf24', fontFamily: "'Barlow', sans-serif", fontWeight: 300, fontSize: 12, lineHeight: 1.6, margin: 0 }}>
+            After updating prices here, remember to update them at the pump via your Gilbarco or Verifone system.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button style={{ ...BTN_GREEN, width: '100%', background: 'rgba(34,197,94,0.22)', borderColor: 'rgba(34,197,94,0.6)' }} onClick={handleSave}>
+            Save Prices
+          </button>
+          <button style={{ ...BTN_GHOST, width: '100%' }} onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Generic Action Modal ─────────────────────────────────────────────────────
+
+function GenericActionModal({ insight, onClose, onComplete }: { insight: MockInsight; onClose: () => void; onComplete: () => void }) {
+  const [notes, setNotes] = useState('')
+
+  const handleComplete = () => {
+    onComplete()
+    onClose()
+  }
+
+  return (
+    <div style={OVERLAY_STYLE} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={MODAL_STYLE}>
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}
+        >
+          ×
+        </button>
+
+        <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 22, letterSpacing: '0.04em', color: '#f9fafb', marginBottom: 6 }}>
+          ACTION REQUIRED
+        </h2>
+        <p style={{ color: '#6b7280', fontWeight: 300, fontSize: 13, lineHeight: 1.6, marginBottom: 24 }}>
+          {insight.title}
+        </p>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={LABEL_STYLE}>Log what you did</label>
+          <textarea
+            placeholder="Describe the action you took..."
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={4}
+            style={{ ...INPUT_STYLE, resize: 'vertical', lineHeight: 1.6 }}
+            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(34,197,94,0.5)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+          />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button style={{ ...BTN_GREEN, width: '100%', background: 'rgba(34,197,94,0.22)', borderColor: 'rgba(34,197,94,0.6)' }} onClick={handleComplete}>
+            Mark Complete
+          </button>
+          <button style={{ ...BTN_GHOST, width: '100%' }} onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Insight Card ─────────────────────────────────────────────────────────────
+
+function InsightCard({
+  insight,
+  completedText,
+  onAction,
+}: {
+  insight: MockInsight
+  completedText: string | null
+  onAction: (insight: MockInsight) => void
+}) {
   const pStyle = PRIORITY_STYLES[insight.priority]
   return (
     <div
@@ -111,30 +453,54 @@ function InsightCard({ insight }: { insight: MockInsight }) {
       <p className="text-sm mb-4" style={{ color: '#6b7280', fontWeight: 300, lineHeight: 1.6 }}>
         {insight.description}
       </p>
-      <Link
-        href={insight.action_url}
-        className="inline-block text-xs px-4 py-1.5 rounded-lg transition-all duration-150"
-        style={{
-          background: 'rgba(34,197,94,0.1)',
-          border: '1px solid rgba(34,197,94,0.25)',
-          color: '#22c55e',
-          fontFamily: "'Barlow', sans-serif",
-          fontWeight: 500,
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = 'rgba(34,197,94,0.2)'
-          e.currentTarget.style.borderColor = 'rgba(34,197,94,0.5)'
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = 'rgba(34,197,94,0.1)'
-          e.currentTarget.style.borderColor = 'rgba(34,197,94,0.25)'
-        }}
-      >
-        {insight.action_label} →
-      </Link>
+
+      {completedText ? (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            color: '#22c55e',
+            fontFamily: "'Barlow', sans-serif",
+            fontWeight: 500,
+            fontSize: 13,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6.5" stroke="#22c55e" strokeOpacity="0.4"/>
+            <path d="M4 7L6.2 9.2L10 5" stroke="#22c55e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          {completedText}
+        </span>
+      ) : (
+        <button
+          onClick={() => onAction(insight)}
+          className="inline-block text-xs px-4 py-1.5 rounded-lg transition-all duration-150"
+          style={{
+            background: 'rgba(34,197,94,0.1)',
+            border: '1px solid rgba(34,197,94,0.25)',
+            color: '#22c55e',
+            fontFamily: "'Barlow', sans-serif",
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(34,197,94,0.2)'
+            e.currentTarget.style.borderColor = 'rgba(34,197,94,0.5)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(34,197,94,0.1)'
+            e.currentTarget.style.borderColor = 'rgba(34,197,94,0.25)'
+          }}
+        >
+          {insight.action_label} →
+        </button>
+      )}
     </div>
   )
 }
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -160,7 +526,31 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
   )
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+type ModalType = 'delivery' | 'price' | 'generic' | null
+
 export default function DashboardPage() {
+  const [activeModal, setActiveModal] = useState<{ type: ModalType; insight: MockInsight | null }>({ type: null, insight: null })
+  const [completedCards, setCompletedCards] = useState<Record<string, string>>({})
+
+  const openModal = (insight: MockInsight) => {
+    const label = insight.action_label.toLowerCase().trim()
+    if (label === 'order delivery') {
+      setActiveModal({ type: 'delivery', insight })
+    } else if (label === 'update price') {
+      setActiveModal({ type: 'price', insight })
+    } else {
+      setActiveModal({ type: 'generic', insight })
+    }
+  }
+
+  const closeModal = () => setActiveModal({ type: null, insight: null })
+
+  const markComplete = (id: string, text: string) => {
+    setCompletedCards(prev => ({ ...prev, [id]: text }))
+  }
+
   return (
     <div style={{ backgroundColor: '#080910', minHeight: '100vh' }}>
       <NavBar />
@@ -208,7 +598,14 @@ export default function DashboardPage() {
                   </p>
                 </div>
               ) : (
-                MOCK_INSIGHTS.map(insight => <InsightCard key={insight.id} insight={insight} />)
+                MOCK_INSIGHTS.map(insight => (
+                  <InsightCard
+                    key={insight.id}
+                    insight={insight}
+                    completedText={completedCards[insight.id] ?? null}
+                    onAction={openModal}
+                  />
+                ))
               )}
             </div>
 
@@ -254,6 +651,27 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Modals */}
+      {activeModal.type === 'delivery' && (
+        <DeliveryModal
+          onClose={closeModal}
+          onScheduled={() => markComplete(activeModal.insight!.id, 'Delivery Scheduled ✓')}
+        />
+      )}
+      {activeModal.type === 'price' && (
+        <PriceModal
+          onClose={closeModal}
+          onSaved={() => markComplete(activeModal.insight!.id, 'Price Updated ✓')}
+        />
+      )}
+      {activeModal.type === 'generic' && activeModal.insight && (
+        <GenericActionModal
+          insight={activeModal.insight}
+          onClose={closeModal}
+          onComplete={() => markComplete(activeModal.insight!.id, 'Marked Complete ✓')}
+        />
+      )}
     </div>
   )
 }
